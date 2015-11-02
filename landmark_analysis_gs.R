@@ -9,11 +9,9 @@ install.packages("MASS")
 install.packages("candisc")
 install.packages("devtools")
 
-
-
 # google sheets API
 library(devtools)
-devtools::install_github("jennybc/googlesheets")
+#devtools::install_github("jennybc/googlesheets")
 
 # load libraries
 library("geomorph")
@@ -22,6 +20,8 @@ library("candisc")
 library("MASS")
 library("dplyr")
 library("googlesheets")
+
+list.files("functions", full.names = TRUE) %>% source()
 
 #### LIBRARIES ####
 
@@ -36,8 +36,7 @@ gs_ls()
 
 ## load in sheet from google sheets
 morphodat.gs <- gs_title("East Coast Morphometrics - 2015")
-morphodat <- data.frame(get_via_csv(morphodat.gs))
-
+morphodat <- data.frame(gs_read_csv(morphodat.gs))
 
 ## write csv to file (for working offline)
 write.csv(morphodat, file="east_coast_morphometrics_2015.csv")
@@ -85,7 +84,7 @@ landmarks.raw <- cbind(landmarks.ids, landmarks.matrix[,landmarks.order])
 ## manual method
 ## landmarks <- read.csv("Corrected Landmark Data.csv")
 
-#### LOAD RAW DATA ####
+#### END LOAD RAW DATA ####
 
 ##Removing outliers
 #run initial analysis, remove outliers from this, then re-do data sheet for final landmarks
@@ -106,17 +105,19 @@ GPA.2D <- two.d.array(GPA.landmarks$coords) #2D Data frame of procrustes coordin
 
 #ouliers found from principle component stuff. 
 
-PCA<- plotTangentSpace(GPA.landmarks$coords, groups= factor(landmarks.outliers$population), verbose=T)
-PC.scores <- as.data.frame(PCA$pc.scores) #gives the PCA scores
+PCA <- prcomp(GPA.2D)
+#PCA <- plotTangentSpace(GPA.landmarks$coords ,verbose = TRUE)
+PC.scores <- data.frame(PCA$x) #gives the PCA scores
 PC.scores$ID <- paste(landmarks.outliers$population, landmarks.outliers$individual, sep="_")
 
-
 #determined outliers from PC plot....
-PC.scores <- filter(PC.scores, PC1> -0.10 & PC1< 0.10 & PC2> -0.06 & PC2< 0.06)
+pc_scores_filt <- filter(PC.scores, PC1> -0.10 & PC1< 0.10 & PC2> -0.06 & PC2< 0.06)
+
 ggplot(PC.scores, aes(x=PC1, y=PC2, label=ID)) +geom_point() +geom_text() #filter works
+ggplot(pc_scores_filt, aes(x=PC1, y=PC2, label=ID)) +geom_point() +geom_text() #filter works
 
 #create updated landmarks data frame, outliers removed 
-landmarks <- merge(landmarks.outliers, PC.scores, by=c("ID"))
+landmarks <- merge(landmarks.outliers, pc_scores_filt, by=c("ID"))
 landmarks <- landmarks[!duplicated(landmarks[,"ID"]),] #duplicated IDs upon merging..
 landmarks <- subset(landmarks, select=-c(PC1:PC38))
 
@@ -144,30 +145,37 @@ GPA.landmarks <- gpagen(landmark.array) #Procrustes analysis
 
 GPA.2D <- two.d.array(GPA.landmarks$coords) #2D Data frame of procrustes coordinates
 
-
 #principle component stuff. 
-PCA<- plotTangentSpace(GPA.landmarks$coords, groups= factor(landmarks$population), verbose=T)
+PCA <- plotTangentSpace(GPA.landmarks$coords, groups= factor(landmarks$population), verbose=T)
 PCA$pc.scores #gives the PCA scores
 
 #unbending; just show me PC2 vs PC3
 plotTangentSpace(GPA.landmarks$coords, groups=factor(landmarks$species), axis1=2, axis2=3)
 
 #make a prettier plot! 
-PC.scores<-as.data.frame(PCA$pc.scores)
-ggplot(PC.scores, aes(x=PC3, y=PC4, color=landmarks$species)) + geom_point(size=3) 
+PCA <- plotTangentSpace(GPA.landmarks$coords, verbose = TRUE)
+PC.scores <- PCA$pc.scores %>% data.frame
 
+PC.scores %>%
+ggplot(aes(x=PC2, y=PC3, color=landmarks$species)) + geom_point(size=3) 
 ggplot(PC.scores, aes(x=PC5, y=PC6, color=landmarks$species)) + geom_point(size=3) 
 #...nothin to show for shape differences. Dang. 
 
 #MANOVA 
 PC1 <- as.vector(PCA$pc.scores[,1]) #get a vector of PC1 to use as a covariate
 
-procD.lm(GPA.2D~landmarks$population*landmarks$species, iter=99) #without PC1 bending accounted for
-procD.lm(GPA.2D~landmarks$population+landmarks$species*PC1, iter=99) #if PC1 is a covariate...
+gpa_df <- data.frame(pop = landmarks$population, species = landmarks$species, PC1, GPA.2D)
+
+gpa_df_b <- gpa_df %>%
+  filter(species =="B")
+
+procD.lm(gpa_df[,4:length(gpa_df)]~gpa_df$PC1+gpa_df$species, iter=99)#without PC1 bending accounted for
 
 #Linear discriminant function analysis 
 
-lda.species <- lda(GPA.2D, landmarks$species) #what does this mean? 
+gpa_df_wc <- gpa_df %>%
+  filter(species =="W" | species =="C") 
+lda.species <- lda(gpa_df_wc[,4:length(gpa_df_wc)], gpa_df_wc$species) #what does this mean? 
 
 # the default plot, looks meh
 plot(lda.species)
@@ -185,19 +193,14 @@ lda.project <- data.frame(species = landmarks$species,
                           population = landmarks$population, 
                           individual = landmarks$individual,
                           ID = landmarks$ID,
-                          ld1 = plda$x[,1], 
-                          ld2 = plda$x[,2])
+                          ld1 = plda$x[,1])
 
 # plot LDA without "Both" locations
 lda.project %>%
   filter(species != "B") %>%
-  ggplot(aes(color = species, x = ld1,y = ld2))+
-  geom_point(size = 3) +
-  labs(x = paste0("LD1 (", prop.lda[1], "%)"),
-       y = paste0("LD2 (", prop.lda[2], "%)")) 
+  ggplot(aes(fill = species, x = ld1))+
+  geom_histogram()
   
-
-
 # the loadings of the LDA axes
 lda.species$scaling
 

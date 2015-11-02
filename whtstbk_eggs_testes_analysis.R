@@ -12,7 +12,7 @@ library("candisc")
 library("MASS")
 library("dplyr")
 
-devtools::install_github("jennybc/googlesheets")
+#devtools::install_github("jennybc/googlesheets")
 
 library("googlesheets")
 
@@ -164,14 +164,15 @@ ggplot(testedat, aes(x=std.length, y=avg.size, color=factor(membership))) +
 #weight
 testedat %>%
   filter(avg.weight<1) %>%
+  filter(!(membership == 1 & std.length < 4)) %>%
 ggplot(aes(x=std.length, y=avg.weight, color=factor(membership))) +
-  geom_point(na.rm=T) +
-  stat_smooth(method=lm, na.rm=T) +
+  geom_point(size = 4, na.rm = T) +
+  stat_smooth(method=lm, na.rm=T, size = 2, se = FALSE) +
   labs(
     x = "Standard Length",
     y = "Avg. teste weight",
     color = "Membership") +
-  theme_classic() +
+  theme_hc(base_size = 16) +
   scale_colour_manual(values=c("firebrick1", "cornflower blue"))
 
 
@@ -214,11 +215,13 @@ ggplot(testedat, aes(x=std.length, y=avg.size.2, color=factor(membership))) +
 #boxplots: size and weight differences
 
   #size lm to get residuals
-teste.size.lm <- lm(avg.size~std.length, data=testedat, na.action=na.exclude)
+teste.size.lm <- lm(avg.size ~ std.length, data=testedat, na.action=na.exclude)
 testedat$teste.size.resid <- residuals(teste.size.lm)
 
-  #size by membership
-ggplot(testedat, aes(x=membership, teste.size.resid, colour=factor(membership))) +
+# size by membership
+testedat %>%
+  filter(teste.size.resid > 0.3) %>%
+ggplot(aes(x=membership, teste.size.resid, colour=factor(membership))) +
   geom_boxplot(na.rm=T) + 
   labs(
     x = "Membership",
@@ -227,12 +230,12 @@ ggplot(testedat, aes(x=membership, teste.size.resid, colour=factor(membership)))
   theme_classic() +
   scale_colour_manual(values=c("firebrick1", "cornflower blue"))
 
-  #weight lm for residuals
+# weight lm for residuals
 teste.weight.lm <- lm(avg.weight~std.length, data=testedat, na.action=na.exclude)
 testedat$teste.weight.resid <- residuals(teste.weight.lm)
 
   #weight by membership
-ggplot(testedat, aes(x=membership, teste.weight.resid, colour=factor(membership))) +
+ggplot(testedat, aes(x = membership, y = avg.weight, colour=factor(membership))) +
   xlab("Membership") + ylab("Residuals for  avg. teste weight") +
   geom_boxplot(na.rm=T) +
   labs(
@@ -248,8 +251,13 @@ ggplot(testedat, aes(x=membership, teste.weight.resid, colour=factor(membership)
 library("nlme")
 
 #size differences 
-teste.test<-lme(avg.size ~ std.length * membership, data=testedat, random= ~1|population, na.action=na.omit) 
-summary(teste.test) 
+teste.test <- testedat %>%
+filter(!(membership == 1 & std.length < 4)) %>%
+filter(avg.weight < 1.0) %>%
+lm(avg.weight ~ std.length * membership, data=., na.action=na.omit) %>%
+summary() 
+
+visreg2d(teste.test)
 
 anova(teste.test)  #type I anova                        
 
@@ -279,4 +287,51 @@ filtered.data<-filter(data, sequenced.==1)
 filtered.data<-filter(filtered.data, species!='B')
 filtered.data<-filter(filtered.data, sex=='M')
 filtered.data<-filter(filtered.data, std.length>4 & std.length<5)
+
+theme_black=function(base_size=12,base_family="") {
+  theme_grey(base_size=base_size,base_family=base_family) %+replace%
+    theme(
+      # Specify axis options
+      axis.line=element_blank(), 
+      axis.text.x=element_text(size=base_size*0.8,color="white",
+                               lineheight=0.9,vjust=1), 
+      axis.text.y=element_text(size=base_size*0.8,color="white",
+                               lineheight=0.9,hjust=1), 
+      axis.ticks=element_line(color="white",size = 0.2), 
+      axis.title.x=element_text(size=base_size,color="white",vjust=1), 
+      axis.title.y=element_text(size=base_size,color="white",angle=90,
+                                vjust=0.5), 
+      axis.ticks.length=unit(0.3,"lines"), 
+      axis.ticks.margin=unit(0.5,"lines"),
+      # Specify legend options
+      legend.background=element_rect(color=NA,fill="black"), 
+      legend.key=element_rect(color="white", fill="black"), 
+      legend.key.size=unit(1.2,"lines"), 
+      legend.key.height=NULL, 
+      legend.key.width=NULL,     
+      legend.text=element_text(size=base_size*0.8,color="white"), 
+      legend.title=element_text(size=base_size*0.8,face="bold",hjust=0,
+                                color="white"), 
+      legend.position="right", 
+      legend.text.align=NULL, 
+      legend.title.align=NULL, 
+      legend.direction="vertical", 
+      legend.box=NULL,
+      # Specify panel options
+      panel.background=element_rect(fill="black",color = NA), 
+      panel.border=element_rect(fill=NA,color="white"), 
+      panel.grid.major=element_blank(), 
+      panel.grid.minor=element_blank(), 
+      panel.margin=unit(0.25,"lines"),  
+      # Specify facetting options
+      strip.background=element_rect(fill="grey30",color="grey10"), 
+      strip.text.x=element_text(size=base_size*0.8,color="white"), 
+      strip.text.y=element_text(size=base_size*0.8,color="white",
+                                angle=-90), 
+      # Specify plot options
+      plot.background=element_rect(color="black",fill="black"), 
+      plot.title=element_text(size=base_size*1.2,color="white"), 
+      plot.margin=unit(c(1,1,0.5,0.5),"lines")
+    )
+}
 

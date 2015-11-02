@@ -1,12 +1,16 @@
 #### F2 white stickleback body size and melanocyte analysis #### 
 
+
+library(ggplot2)
+library(dplyr)
+
 ### Initial loading 
 
 data <- read.csv("F2 white stickleback morphometrics.csv")
 
 data$family <- as.factor(data$family)
 
-data$melanocytes <- as.integer(data$melanocytes)
+data$melanocytes <- as.integer(data$melanophores)
 
 
 
@@ -38,14 +42,13 @@ ggplot(morphodat, aes(x=family, y=standard.length)) +
 
 # One-way anova for average population std. length by species 
 std.length.lm<-lm(morphodat$standard.length ~ morphodat$family)
+summary(std.length.lm)
 anova(std.length.lm)
 
 # One-way anova for average population body depth by species 
 depth.lm <- lm(morphodat$body.depth ~ morphodat$family)
+summary(depth.lm)
 anova(depth.lm)
-
-
-
 
 
 ### melanocyte counts analysis ### 
@@ -53,7 +56,7 @@ anova(depth.lm)
 ## Graphs 
 
 # melanocyte counts by family
-ggplot(data, aes(x=family, y=melanopcytes)) + 
+ggplot(data, aes(x=family, y=melanocytes)) + 
   geom_boxplot(na.rm=T) + 
   labs(
     x = "F2 Family",
@@ -63,7 +66,10 @@ ggplot(data, aes(x=family, y=melanopcytes)) +
 
 
 ## Hypothesis testing: melanocyte counts by family 
-melan.lm<-lm(data$melanocytes ~ data$family)
+melan.lm <- lm(data$melanocytes ~ data$family)
+summary(melan.lm)
 anova(melan.lm)
 
+ggplot(data, aes(x = melanocytes, y = body.depth, color = family))+
+  geom_point(size = 4)
 

@@ -51,10 +51,10 @@ plotTangentSpace(GPA.landmarks$coords, groups=factor(landmarks.data$family), axi
 
 # Make a prettier plot 
 PC.scores<-as.data.frame(PCA$pc.scores)
-ggplot(PC.scores, aes(x=PC2, y=PC3, color=factor(F2.data$family))) +
+ggplot(PC.scores, aes(x=PC3, y=PC4, color=factor(F2.data$family))) +
   geom_point(size=5) +
-  labs( x= "PC2",
-        y= "PC3", 
+  labs( x= "PC3",
+        y= "PC4", 
         color= "Family") +
   theme_classic()
 
@@ -95,10 +95,10 @@ lda.project <- data.frame(family = F2.data$family,
 
 # Plot LDA 
 ggplot(lda.project, aes(color = factor(family), x = ld1,y = ld2))+
-  geom_point(size = 5) +
+  geom_point(size = 9) +
   labs(x = paste0("LD1 (", prop.lda[1], "%)"),
        y = paste0("LD2 (", prop.lda[2], "%)")) +
-  theme_classic()
+  theme_hc()
 
 # Do LDA categories match color or size differentiation? 
 

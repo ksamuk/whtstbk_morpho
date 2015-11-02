@@ -229,10 +229,29 @@ landmark.centroids.rename$id <- landmark.centroids$id %>%
 
 cluster.morph <- left_join(cluster.dat.reduced, landmark.centroids.rename)
 
+cluster.morph <- cluster.morph  %>%
+  filter(!is.na(population)) %>%
+  filter(!is.na(sex))
+
+cluster.morph$population <- recode(cluster.morph$population, "c('CPSE2014','CPN') = 'CP'")
+cluster.morph$population <- gsub("2014", "", cluster.morph$population)
+cluster.morph$membership<- recode(cluster.morph$membership, "c(1) = c('common'); else = 'white'")
+cluster.morph$sex<- recode(cluster.morph$sex, "c('M') = c('Male'); else = 'Female'")
+
+
+
 # Plot centroid size by population again
 cluster.morph  %>%
-  filter(!is.na(population)) %>%
+  #filter(population %in% c("CL", "MH", "SF", "SR2014", "RT", "SH")) %>%
   ggplot(aes(x = population, y = centroid, color=factor(membership))) +
-  geom_point(size=3) +
-  facet_grid(~ species, scale = "free", space = "free")
+  geom_jitter(position = position_jitter(width = .1), size = 4) +
+  theme_solarized(base_size = 24, light = FALSE)+
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = 24, face = 'bold'),
+        rect = element_rect(fill = "black"),
+        legend.title = element_blank())+
+  ylab("Body size")+
+  xlab("Population")+
+  scale_colour_few()+
+  facet_grid(sex~.)
 

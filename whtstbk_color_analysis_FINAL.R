@@ -178,14 +178,17 @@ ggplot(male.HSV.dat,aes(x=std.length, y=v, color=factor(membership))) +
 
 
 # Boxplot brightness by membership for males
-ggplot(male.HSV.dat, aes(x=membership, y=v, color=factor(membership))) + 
+genetic.HSV.dat %>%
+  filter(sex == "M" | sex == "F") %>%
+  filter(!is.na(membership)) %>%
+ggplot(aes(x = sex, y = v, color = factor(membership))) + 
   geom_boxplot() +
   labs(
     x = "Membership",
     y = "Value (Brightness) for males",
     color = "Membership") +
-  theme_classic() +
-  scale_colour_manual(values=c("firebrick1", "cornflower blue"))
+  theme_hc() +
+  scale_color_manual(values=c("firebrick1", "cornflower blue"))
 
 
 ## Hypothesis testing: Value (Brightness) is significantly different by species

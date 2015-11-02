@@ -3,7 +3,6 @@
 install.packages("geomorph")
 install.packages("candisc")
 install.packages("MASS")
-install.packages("candisc")
 
 library("geomorph")
 library("ggplot2")
@@ -11,7 +10,6 @@ library("ggthemes")
 library("candisc") # will use this later
 library("MASS")
 library("dplyr")
-library("cats")
 
 landmarks <- read.csv("Corrected Landmark Data.csv")
 
