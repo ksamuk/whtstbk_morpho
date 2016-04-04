@@ -187,15 +187,16 @@ ggplot(testedat, aes(x=std.length, y=avg.size, color=factor(membership))) +
 # Plot average weight by Std. Length: significant (outliers removed)
 testedat %>%
   filter(avg.weight<1) %>%
+  filter(!(membership == 1 & std.length < 4)) %>%
   ggplot(aes(x=std.length, y=avg.weight, color=factor(membership))) +
-  geom_point(na.rm=T) +
-  stat_smooth(method=lm, na.rm=T) +
+  geom_point(na.rm = T, size = 3) +
+  stat_smooth(method = lm, na.rm = TRUE, size = 3, se = FALSE) +
   labs(
     x = "Standard Length (cm)",
     y = "Avg. teste weight (mg)",
     color = "Membership") +
-  theme_classic() +
-  scale_colour_manual(values=c("firebrick1", "cornflower blue"))
+  theme_solarized(base_size = 24, light = FALSE)+
+  scale_colour_solarized("blue")
 
 # Plot teste size vs weight 
 ggplot(testedat, aes(x=avg.weight, y=avg.size, color=factor(membership))) +

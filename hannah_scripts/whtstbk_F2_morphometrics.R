@@ -29,12 +29,16 @@ ggplot(morphodat, aes(x=family, y=body.depth)) +
   theme_classic() 
 
 # Boxplot standard length by family
-ggplot(morphodat, aes(x=family, y=standard.length)) +
-  geom_boxplot(na.rm=T) +
-  labs(
-    x = "F2 Family",
-    y = "Standard Length (cm)") +
-  theme_classic() 
+morphodat %>%
+  filter(family != 7) %>%
+  ggplot(aes(x=family, y=standard.length, fill = family, color = "black")) +
+    geom_boxplot(na.rm=T) +
+    labs(
+      x = "F2 Family",
+      y = "Standard Length (cm)") +
+    theme_solarized(light = FALSE)+
+    scale_color_solarized()
+    
 
 
 
@@ -56,12 +60,15 @@ anova(depth.lm)
 ## Graphs 
 
 # melanocyte counts by family
-ggplot(data, aes(x=family, y=melanocytes)) + 
-  geom_boxplot(na.rm=T) + 
-  labs(
-    x = "F2 Family",
-    y = "Number of melanocytes") +
-  theme_classic() 
+data %>%
+  filter(family != 7) %>%
+  mutate(family = factor(family)) %>%
+  ggplot(aes(x = family, y = melanocytes, fill = factor(family), color = 1)) +
+  geom_boxplot()+
+    labs(
+      x = "F2 Family",
+      y = "Number of melanocytes") +
+  theme_solarized(base_size = 24, light = FALSE)
 
 
 

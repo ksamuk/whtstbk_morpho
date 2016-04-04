@@ -247,11 +247,14 @@ cluster.morph  %>%
   geom_jitter(position = position_jitter(width = .1), size = 4) +
   theme_solarized(base_size = 24, light = FALSE)+
   theme(strip.background = element_blank(),
+        panel.grid = element_blank(),
         strip.text = element_text(size = 24, face = 'bold'),
-        rect = element_rect(fill = "black"),
-        legend.title = element_blank())+
+        panel.background = element_rect(fill = "black"),
+        legend.title = element_blank(),
+        panel.background = element_blank())+
   ylab("Body size")+
   xlab("Population")+
-  scale_colour_few()+
+  scale_colour_solarized("blue")+
   facet_grid(sex~.)
 
+ggsave(filename = "body_plot.pdf")

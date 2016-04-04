@@ -124,14 +124,15 @@ landmark.centroids <- data.frame(family = F2.data$family,
                                  centroid = GPA.landmarks$Csize)
 
 # Plot centroid sizes by population 
-
-ggplot(landmark.centroids, aes(x = family, y = centroid, color=factor(family))) +
-  geom_point(size=5) + 
-  labs( x= "Family",
-        y="Centroid size",
-        color= "Family") +
-  theme_classic()
-
+landmark.centroids %>%
+  filter(family != 7) %>%
+  mutate(family = factor(family)) %>%
+  ggplot(aes(x = family, y = centroid, fill = factor(family), color = 1)) +
+    geom_boxplot() + 
+    labs( x= "Family",
+          y="Centroid size",
+          color= "Family") +
+    theme_solarized(base_size = 24, light = FALSE)
 
 
 #### Post-Script ####
