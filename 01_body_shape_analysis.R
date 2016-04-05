@@ -18,6 +18,8 @@ library("dplyr")
 library("ggplot2")
 library("ggthemes")
 
+list.files("shared_functions", full.names = TRUE) %>% sapply(source) %>% invisible
+
 select<- dplyr::select #allows dplyr to use select when MASS package is loaded
 
 ######################################################################
@@ -50,6 +52,8 @@ morpho_df <- left_join(morpho_df, meta_df, by = "id")
 
 ## GEOMORPH Analysis ## 
 
+morpho_df <- data.frame(morpho_df, csize = landmark_gpa$Csize)
+
 # Create a 3D array with just the x/y coordinates 
 morpho_sub <- morpho_df %>%
   filter(!is.na(x.1)) %>%
@@ -72,13 +76,16 @@ plot(landmark_gpa)
 
 #landmark_gpa_2d <- two.d.array(landmark_gpa$coords) #2D Data frame of procrustes coordinates
 
+# add in scaling factor into morpho_sub
+<- landmark_gpa$Csize
+
 ######################################################################
 # pca of landmark data
 ######################################################################
 
 morpho_pca <- plotTangentSpace(landmark_gpa$coords, groups = factor(morpho_sub$cluster), verbose = TRUE)
 
-sherrat_pca_plot(pc1 = 1, pc2 = 2, landmark_gpa = landmark_gpa, groups = factor(morpho_sub$cluster))
+sherrat_pca_plot(pc1 = 2, pc2 = 3, landmark_gpa = landmark_gpa, groups = factor(morpho_sub$cluster))
 
 ######################################################################
 # direct comparisons of groups
@@ -94,7 +101,7 @@ prod_lm <- advanced.procD.lm(gpa_array~PC1, gpa_array~PC1 + morpho_sub$cluster,i
 
 ## Linear discriminant function analysis ##
 
-lda.species <- lda(gpa_array, morpho_sub$cluster, CV = TRUE) 
+lda.species <- lda(gpa_array, morpho_sub$cluster) 
 
 # the percent of variance explained by the LD funcitons
 prop.lda <- lda.species$svd^2/sum(lda.species$svd^2) 
@@ -116,12 +123,28 @@ lda.project %>%
   geom_point(size = 3) +
   labs(x = paste0("LD1 (", prop.lda[1], "%)"),
        y = paste0("LD2 (", prop.lda[2], "%)")) +
-  theme_classic() +
-  scale_colour_manual(values=c("firebrick1", "cornflower blue"))
+  theme_classic()
+
+
+lda_cluster_cv <- lda(gpa_array, morpho_sub$cluster, CV = TRUE) 
+
+# Assess the accuracy of the prediction
+# percent correct for each category of G
+ct <- table(morpho_sub$cluster, lda_cluster_cv$class)
+diag(prop.table(ct, 1))
+# total percent correct
+sum(diag(prop.table(ct)))
+
+library(klaR)
+
+df_lda <- data.frame(cluster = morpho_sub$cluster, gpa_array)
+
+partimat(morpho_sub$cluster ~ x.1 + y.1 + x.2 + y.2 + x.3 , data = morpho_sub, method = "lda")
+
+names()
 
 
 ## Cross Validation of LDA ##
-
 # Method 1: take half of the values and create the LDA, 
 #   then plot the rest to check model 
 
