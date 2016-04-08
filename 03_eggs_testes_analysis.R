@@ -163,4 +163,29 @@ test_df %>%
   stat_summary(fun.data = mean_cl_boot, size = 1, geom = "errorbar", width = 0.2, color = "black") + 
   stat_summary(fun.y = mean, geom = "point", color = "black", size = 2)+
   theme_all
-  
+
+######################################################################
+# prepare collated data
+######################################################################   
+
+egg_tmp <- egg_df %>%
+  select(id, mean_diameter, sd_diameter, egg_number, egg_weight) %>%
+  rename(egg_diameter_mean = mean_diameter) %>%
+  rename(egg_diameter_sd = sd_diameter)
+
+test_tmp <- test_df %>%
+  select(id, teste.length.1, teste.length.2, teste.width.1, teste.width.2, weight..mg., weight_resid) %>%
+  rename(testis_weight = weight..mg.) %>%
+  group_by(id) %>%
+  mutate(testis_length_mean = (teste.length.1 + teste.length.2)/2)%>%
+  mutate(testis_width_mean = (teste.width.1 + teste.width.2)/2) %>%
+  ungroup %>%
+  select(id, testis_length_mean, testis_width_mean, testis_weight)
+
+egg_tmp$sex <- "F"
+test_tmp$sex <- "M"
+
+repro_df_tmp <- full_join(egg_tmp, test_tmp)
+
+write.table(repro_df_tmp,file = "data/collated/raw_repro_data.txt", quote = FALSE, row.names = FALSE)
+

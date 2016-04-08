@@ -6,15 +6,18 @@ sherrat_pca_plot <- function(pc1 = 1, pc2 = 2, landmark_gpa = landmark_gpa, grou
   
   if(correct_allometry){
     
+    #perform pca
     morpho_pca <- plotTangentSpace(landmark_gpa$coords, axis1 = pc1, axis2 = pc2,
                                    groups = factor(morpho_sub$cluster), verbose = TRUE)
     
-    # a more sane plot
+    #harvest pca data (1:6)
     pca_df <- data.frame(id = morpho_sub$id, sex = morpho_sub$sex, csize = landmark_gpa$Csize,
                          cluster = morpho_sub$cluster, morpho_pca$pc.scores[,1:6])
     
+    # wide to long
     pca_df_long <- gather(pca_df, key = pc, value = score, -id, -sex, -csize, -cluster)
     
+    # correct for body size ("csize" i.e. the gpa scaling factor)
     resid <- pca_df_long %>%
       group_by(cluster, pc) %>%
       do(augment(lm(score ~ csize, data=.))) %>%
@@ -27,6 +30,7 @@ sherrat_pca_plot <- function(pc1 = 1, pc2 = 2, landmark_gpa = landmark_gpa, grou
     pca_df_resid <- pca_df_long %>%
       select(-score)
     
+    # remake the pca data frame using the residual scores
     pca_df_resid <- spread(pca_df_resid, key = pc, value = resid_score)
     
     # apply the whtstbk palatte
@@ -54,7 +58,7 @@ sherrat_pca_plot <- function(pc1 = 1, pc2 = 2, landmark_gpa = landmark_gpa, grou
     
     
     # plot pca scores
-    plot(pca_df_resid$PC2, pca_df_resid$PC3, pch = 21, 
+    plot(pca_df_resid[,toupper(pc1)], pca_df_resid[,toupper(pc2)], pch = 21, 
          cex = 2, bg = col.gp, xlab = xlab, ylab = ylab, asp = TRUE)
     #legend(-0.09, 0.07, legend= unique(gp), pch=19,  col=unique(col.gp))
 

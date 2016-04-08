@@ -96,6 +96,24 @@ resid <- morpho_corr_long %>%
 
 morpho_corr_long$resid_score <- resid
 
+######################################################################
+# write collated file
+######################################################################
+
+spine_depth <- morpho_corr_long %>% 
+  select(-resid_score) %>% 
+  spread(key = trait, value = value)
+
+spine_depth %>%
+  select(id, std.length, depth.1, depth.2, matches("spine")) %>%
+  rename(std_length = std.length, body_depth1 = depth.1, body_depth2 = depth.2, 
+         spine_dorsal1 = spine.1, spine_dorsal2 = spine.2, spine_dorsal3 = spine.3, spine_pelvic = spine.pelvic) %>%
+  write.table(., file = "data/collated/raw_spine_depth_sl.txt", quote = FALSE, row.names = FALSE)
+
+######################################################################
+# plots
+######################################################################
+
 morpho_corr_long %>%
   ggplot(aes(y = resid, x = geno_sex, color = cluster)) +
   geom_jitter() +

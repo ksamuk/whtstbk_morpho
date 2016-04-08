@@ -48,6 +48,12 @@ iso_df <- iso_df %>%
 iso_df$d15N.resid <- lm(data = iso_df, d15N ~ pop*geno_sex, na.action = "na.exclude") %>% residuals
 iso_df$d13C.resid <- lm(data = iso_df, d13C ~ pop*geno_sex, na.action = "na.exclude") %>% residuals
 
+iso_df %>%
+  select(id, d13C, d15N, d13C.resid, d15N.resid, cn.ratio) %>%
+  rename(isotope_d13C = d13C, isotope_d15N = d15N, 
+         isotope_d13C_resid = d13C.resid, isotope_d15N_resid = d15N.resid, isotope_CN_ratio = cn.ratio) %>%
+  write.table(file = "data/collated/raw_isotope_data.txt", quote = FALSE, row.names = FALSE)
+
 #raw
 iso_df %>%
   ggplot(aes(x = d13C, y = d15N, label = id, color = group, shape = geno_sex)) +

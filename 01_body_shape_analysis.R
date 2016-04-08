@@ -10,6 +10,7 @@
 
 library("nlme")
 library("car")
+library("broom")
 library("geomorph")
 library("ggplot2")
 library("candisc")
@@ -175,6 +176,18 @@ pca_df_long %>%
   theme_base()+
   scale_color_manual(values = c("#77AB43", "#008FD5", "#BDBDBD"))
 
+# write collated output
+pca_df_long %>% 
+  select(-score) %>% 
+  spread(key = pc, value = resid_score) %>%
+  write.table(., file = "data/collated/corrected_pc_scores.txt", quote = FALSE, row.names = FALSE)
+
+pca_df_long %>% 
+  select(-resid_score) %>% 
+  spread(key = pc, value = score) %>%
+  select(-sex, -cluster) %>%
+  write.table(., file = "data/collated/raw_pc_scores.txt", quote = FALSE, row.names = FALSE)
+
 ######################################################################
 # Anova: do pcs differ between groups?
 ######################################################################
@@ -183,11 +196,16 @@ pca_df_resid <- pca_df_long %>%
   select(-score) %>%
   spread(key = pc, value = resid_score)
 
-lm(PC2~sex+cluster, data = pca_df_resid) %>% anova
-lm(PC3~sex+cluster, data = pca_df_resid) %>% anova
-lm(PC4~sex+cluster, data = pca_df_resid) %>% anova
-lm(PC5~sex+cluster, data = pca_df_resid) %>% anova
-lm(PC6~sex+cluster, data = pca_df_resid) %>% anova
+lm(PC2 ~ sex + cluster, data = pca_df_resid) %>% anova
+lm(PC3 ~ sex + cluster, data = pca_df_resid) %>% anova
+lm(PC4 ~ sex + cluster, data = pca_df_resid) %>% anova
+lm(PC5 ~ sex + cluster, data = pca_df_resid) %>% anova
+lm(PC6 ~ sex + cluster, data = pca_df_resid) %>% anova
+
+
+#mano <- manova(cbind(PC1, PC2, PC3, PC4, PC5, PC6) ~ sex + cluster, data = pca_df_resid)
+#summary(mano)
+#Anova(mano)
 
 # nope
 

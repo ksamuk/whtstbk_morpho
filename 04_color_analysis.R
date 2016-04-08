@@ -1,5 +1,5 @@
 ######################################################################
-# Analysis of morphometric landmark data
+# Analysis of photographic color data
 # Kieran Samuk - Apr 2016
 ######################################################################
 
@@ -67,9 +67,6 @@ argmax <- function(x, y, w=2, ...) {
   list(x=x[i.max], i=i.max, y.hat=y.smooth)
 }
 
-argmax(y = tmp$r_freq, x = tmp$r_value, w = 10)
-
-
 #red
 tmp_r <- color_df %>%
   select(matches("R_"), id) %>% 
@@ -109,6 +106,15 @@ col_df <- left_join(tmp_r, tmp_g)
 col_df <- left_join(col_df, tmp_b)
 col_df <- left_join(col_df, meta_df)
 
+col_df %>%
+  group_by(id) %>%
+  mutate(luminance_mean = (r_mean + g_mean + b_mean)) %>%
+  mutate(luminance_mode = (r_mean + g_mean + b_mean)) %>%
+  rename(rgb_r_mean = r_mean, rgb_g_mean = g_mean, rgb_b_mean = b_mean) %>%
+  rename(rgb_r_mode = r_mode_1, rgb_g_mode = g_mode_1, rgb_b_mode = b_mode_1) %>%
+  select(id, matches("rgb|lum")) %>%
+  write.table(file = "data/collated/raw_color_data.txt", quote = FALSE, row.names = FALSE)
+
 ######################################################################
 # plotting all color data
 ######################################################################
@@ -119,16 +125,25 @@ col_lng <- col_df %>%
   mutate(luminance = (r_mean + g_mean + b_mean)) %>%
   mutate(r_g_diff = (r_mean-g_mean)/(r_mean+g_mean)) %>%
   mutate(g_b_diff = (g_mean-b_mean)/(g_mean+b_mean)) %>%
-  gather(key = trait, value = value, -id, -pop, -year, -species, -cluster, -sex, -region)
+  gather(key = trait, value = value, -id, -cluster, -geno_sex) %>%
+  mutate(group = ifelse(cluster == "wht", "white", "common"))
 
 col_lng %>%
   filter(!is.na(cluster)) %>%
   filter(trait == "luminance") %>%
-  ggplot(aes(x = cluster, y = value))+
+  ggplot(aes(x = group, y = value))+
   geom_jitter(width = 0.5, color = "grey")+
   stat_summary(fun.data = mean_cl_boot, size = 1, geom = "errorbar", width = 0.2, color = "black") + 
   stat_summary(fun.y = mean, geom = "point", color = "black", size = 2)+
-  facet_grid(trait~sex, scale = "free") +
+  theme_base()
+
+col_lng %>%
+  filter(!is.na(cluster)) %>%
+  ggplot(aes(x = group, y = value))+
+  geom_jitter(width = 0.5, color = "grey")+
+  stat_summary(fun.data = mean_cl_boot, size = 1, geom = "errorbar", width = 0.2, color = "black") + 
+  stat_summary(fun.y = mean, geom = "point", color = "black", size = 2)+
+  facet_wrap(~trait, scale = "free")+
   theme_base()
 
 ######################################################################
@@ -139,8 +154,8 @@ col_lm <- col_df %>%
   mutate(group = ifelse(cluster == "wht", "white", "common")) %>%
   mutate(luminance = (r_mean + g_mean + b_mean)) %>%
   filter(!is.na(cluster)) %>%
-  filter(!is.na(sex)) %>%
-  lm(luminance~sex + group + group:sex, data = .)
+  filter(!is.na(geno_sex)) %>%
+  lm(luminance~geno_sex + group + group:geno_sex, data = .)
 
 anova(col_lm)
 
